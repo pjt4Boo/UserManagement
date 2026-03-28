@@ -7,14 +7,18 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Authentication routes (built-in Laravel)
+// User Management Routes (Protected)
 Route::middleware('auth')->group(function () {
     // User resource routes (CRUD)
     Route::resource('users', UserController::class);
 
     // Additional user actions
-  
+    Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::post('/users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
+    
+    // Audit logs
+    Route::get('/users/{user}/audit-logs', [UserController::class, 'auditLogs'])->name('users.audit-logs');
 });
 
-// Built-in Laravel authentication scaffolding
+// Auth routes
 require __DIR__.'/auth.php';

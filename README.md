@@ -1,59 +1,230 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# User Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive Laravel 11 User Management application with role-based authorization, PostgreSQL ENUM types, soft deletes, and complete audit logging.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 1. User CRUD Operations
+- ✅ Create new users with email, name, role, and status
+- ✅ View user details and user list (paginated, 15 per page)
+- ✅ Edit user information (name, email, role, status)
+- ✅ Deactivate/activate users (without permanent deletion)
+- ✅ Permanently delete users (admin-only with verification)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 2. Roles & Authorization
+- **Two Roles:** Admin and User
+- **Admin Permissions:**
+  - Manage all users (create, read, update, delete)
+  - View audit logs
+  - Deactivate/activate users
+- **User Permissions:**
+  - View own profile
+  - Cannot manage other users
+- **Implementation:** Laravel Policies (UserPolicy) - no role checks in controllers
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 3. PostgreSQL Requirements
+- **ENUM Types:** Two custom PostgreSQL ENUM types ensure type safety:
+  - `role_enum`: 'admin' | 'user'
+  - `status_enum`: 'active' | 'inactive'
+- **Why ENUMS?** 
+  - **Type Safety:** Database constrains values at schema level, preventing invalid data
+  - **Performance:** Stored as efficient 4-byte integers internally
+  - **Consistency:** Guarantees valid values across all queries
+  - **Alternative:** CHECK constraints work, but ENUMs are cleaner for fixed value sets
 
-## Learning Laravel
+### 4. Web Pages & UI
+- **Login Page:** Email/password authentication with registration link
+- **Register Page:** Self-service user registration (creates users with 'user' role automatically)
+- **User List:** Paginated table with name, email, role, status, action buttons
+- **Create User Form:** Admin-only form with name, email, password, role, status fields
+- **Edit User Form:** Modify user information with email uniqueness validation
+- **User Detail:** View full user profile with action buttons
+- **Audit Logs:** Complete change history for each user
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 5. UI & Responsive Design
+- **Framework:** Tailwind CSS v4 with dark mode support
+- **Components:** Reusable Blade components (buttons, inputs, layouts)
+- **Responsive:** Mobile-first design - works on all screen sizes
+- **States:** Loading indicators, empty states, validation messages
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 6. Data Validation
+- **Form Requests:** Centralized validation logic
+  - CreateUserRequest: name, email (unique), role, status, password
+  - UpdateUserRequest: name, email (unique), role, status
+- **Error Messages:** Clear validation feedback with field-level errors
 
-## Laravel Sponsors
+### 7. Soft Deletes
+- ✅ Users marked as deleted, not permanently removed
+- ✅ Preserved data maintained in database
+- ✅ Can be restored if needed
+- ✅ Soft-deleted users excluded from normal queries
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 8. Audit Logging
+- **Automatic Tracking:** All user changes captured via Auditable trait
+- **Captured Actions:** created, updated, deactivated, deleted
+- **Logged Data:** Actor (who made change), timestamp, field changes (before/after)
+- **Audit Log Page:** View complete change history for each user
 
-### Premium Partners
+## Project Structure
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Controller.php (with AuthorizesRequests trait)
+│   │   ├── UserController.php (CRUD + authorization)
+│   │   └── Auth/ (7 authentication controllers)
+│   └── Requests/
+│       ├── CreateUserRequest.php
+│       └── UpdateUserRequest.php
+├── Models/
+│   ├── User.php (SoftDeletes, Auditable)
+│   └── AuditLog.php
+├── Policies/
+│   └── UserPolicy.php (Authorization rules)
+└── Traits/
+    └── Auditable.php (Auto-logs changes)
 
-## Contributing
+database/
+├── migrations/
+│   ├── create_users_table.php
+│   ├── update_users_table_add_role_status.php (ENUM types)
+│   ├── create_jobs_table.php
+│   ├── create_cache_table.php
+│   └── create_audit_logs_table.php
+└── seeders/
+    └── DatabaseSeeder.php
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+resources/
+├── views/
+│   ├── auth/ (login, register, password reset, email verification)
+│   ├── users/ (list, create, edit, show, audit-logs)
+│   ├── components/ (reusable Blade components)
+│   ├── layouts/ (app, guest, navigation)
+│   └── welcome.blade.php
+└── css/app.css
 
-## Code of Conduct
+routes/
+├── web.php (user management routes)
+└── auth.php (authentication routes)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+tests/
+├── Feature/
+│   ├── Auth/ (registration, login, email verification tests)
+│   └── Users/ (CRUD operations, authorization tests)
+└── Unit/
+```
 
-## Security Vulnerabilities
+## Installation & Setup
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+# 1. Clone and install dependencies
+composer install
+npm install
+
+# 2. Environment setup
+cp .env.example .env
+php artisan key:generate
+
+# 3. Configure PostgreSQL
+# Edit .env with your PostgreSQL database credentials:
+# DB_CONNECTION=pgsql
+# DB_HOST=127.0.0.1
+# DB_PORT=5432
+# DB_DATABASE=user_management
+# DB_USERNAME=postgres
+# DB_PASSWORD=your_password
+
+# 4. Run migrations (creates ENUM types and tables)
+php artisan migrate
+
+# 5. Start development server
+php artisan serve
+
+# 6. Access application
+# Visit: http://localhost:8000
+```
+
+## Default Test Account
+
+After running migrations:
+- **Email:** test@example.com
+- **Password:** password
+
+Use this account to log in and test the application.
+
+## Routes
+
+### Public Routes
+- `GET /` - Welcome page
+- `GET /login` - Login form
+- `POST /login` - Login submission
+- `GET /register` - Registration form
+- `POST /register` - Registration submission
+
+### Protected Routes (Auth Required)
+- `GET /users` - List all users (paginated)
+- `GET /users/create` - Create user form
+- `POST /users` - Store new user
+- `GET /users/{id}` - View user details
+- `GET /users/{id}/edit` - Edit user form
+- `PUT /users/{id}` - Update user
+- `DELETE /users/{id}` - Delete user (hard delete)
+- `POST /users/{id}/deactivate` - Deactivate user
+- `POST /users/{id}/activate` - Activate user
+- `GET /users/{id}/audit-logs` - View user change history
+
+## Testing
+
+```bash
+# Run feature and unit tests
+php artisan test
+
+# Run specific test
+php artisan test tests/Feature/Auth/AuthenticationTest.php
+
+# Run with coverage
+php artisan test --coverage
+```
+
+## Architecture Decisions
+
+### Why Policies Over Role Checks?
+- **Separation of Concerns:** Authorization logic isolated from controllers
+- **Reusability:** Policies used across controllers, tests, templates
+- **Testability:** Easy to unit test authorization rules
+- **Maintainability:** Changes to permissions in one place
+
+### Why Auditable Trait?
+- **Single Responsibility:** Trait encapsulates audit logging logic
+- **Reusability:** Can be applied to other models needing audit trails
+- **Automatic:** Changes captured via Eloquent events, no manual logging needed
+
+### Why Form Requests?
+- **Validation Rules:** Business logic rules defined in specialized class
+- **Error Messages:** Consistent validation feedback across application
+- **Authorization:** Can check permissions before processing request
+
+## Security Features
+
+- ✅ Password hashing (bcrypt)
+- ✅ CSRF protection on all forms
+- ✅ Role-based authorization checks
+- ✅ Email uniqueness validation
+- ✅ Soft deletes prevent accidental permanent data loss
+- ✅ Audit trail for compliance and debugging
+
+## Future Enhancements
+
+- [ ] Additional roles (Manager, Operator, Viewer)
+- [ ] Bulk user import/export
+- [ ] Email notifications for user actions
+- [ ] Two-factor authentication (2FA)
+- [ ] User activity timeline
+- [ ] Advanced filtering and search
+- [ ] API endpoints with token authentication
+- [ ] Permission-based access control (RBAC) instead of just roles
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT

@@ -11,7 +11,8 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        // Allow all authenticated users (non-admins will be redirected to their profile in the controller)
+        return true;
     }
 
     /**
